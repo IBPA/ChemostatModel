@@ -1,6 +1,6 @@
 function Chemostat_Model
     plot_diff_ratio;
-    plot_best_Hill_model    
+    plot_best_Hill_model
     simulate_and_export;
     %search_parameter_Hill_function_model
 end
@@ -75,7 +75,7 @@ function search_parameter_Hill_function_model
             for k = 1:length(n_H_list)
                  alpha_H = alpha_H_list(i);
                  K_H = K_H_list(j);
-                 n_H = n_H_list(k);                
+                 n_H = n_H_list(k);
                  OD = plot_Hill_function_trial(false);
                  diff = abs(OD(1) - 2.1) + abs(OD(2) - 3.15) + abs(OD(3) - 4.4) + abs(OD(4) - 5.5);
                  if (diff < min_diff)
@@ -85,12 +85,12 @@ function search_parameter_Hill_function_model
                     min_diff = diff;
                  end
             end
-        end        
+        end
     end
     disp([alpha_H_best, K_H_best, n_H_best]);
     alpha_H = alpha_H_best;
     K_H = K_H_best;
-    n_H = n_H_best;                
+    n_H = n_H_best;
     plot_Hill_function_trial(true);
 end
 
@@ -103,7 +103,7 @@ function OD = plot_Hill_function_trial(is_plotted)
     [T2 Y2] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.2, V_max, 0.2, 0.15]);
     [T3 Y3] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.4, V_max, 0.4, 0.35]);
     [T4 Y4] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.8, V_max, 0.8, 0.15]);
-    OD = [Y1(length(Y1),4), Y2(length(Y2),4), Y3(length(Y3),4), Y4(length(Y4),4)];    
+    OD = [Y1(length(Y1),4), Y2(length(Y2),4), Y3(length(Y3),4), Y4(length(Y4),4)];
     %disp(OD);
     if (is_plotted)
         figure;
@@ -158,27 +158,27 @@ function [T, Y] = simulate_extended_model(init_conc, init_OD, mutated_strain, wt
 	% Mutant: strain = 2
 	[T2 Y2] = ode45(@extended_model_ode,[0, 300 - wt_phase_time], [mutated_strain, Y1(size(Y1,1),2), Y1(size(Y1,1),3), Y1(size(Y1,1),4), Y1(size(Y1,1),5)]);
 	T = cat(1,T1,T2 + wt_phase_time);
-	Y = cat(1,Y1,Y2);	
+	Y = cat(1,Y1,Y2);
 end
 
 function dydt = extended_model_ode(t,y)
 	global V_max v_i v_o mu_max C_max K_C;
 	% Parameters
-	% V_max	
+	% V_max
 	% v_o
 	% v_i
 	% mu_max	maximum growth rate
 	% v_C_max
 	% K_C
-	
+
 	% -------------------------------------------
 	% Variables
 	Strain = y(1);	%
-	C_0 = y(2);	% In-flux glycerol concentration	
+	C_0 = y(2);	% In-flux glycerol concentration
 	V = y(3);	% Culture volume
 	C = y(4);	% Extracellular carbon source
 	B = y(5);	% Biomass
-	
+
 	dydt = zeros(5,1);
 	% V - Volume
 	if (V > V_max)
@@ -213,20 +213,20 @@ function dydt = extended_model_ode_with_Hill_function(t,y)
 	global V_max v_i v_o mu_max C_max K_C;
     global alpha_H K_H n_H;
 	% Parameters
-	% V_max	
+	% V_max
 	% v_o
 	% v_i
 	% mu_max	maximum growth rate
 	% v_C_max
 	% K_C
-	
+
 	% -------------------------------------------
 	% Variables
-	C_0 = y(1);	% In-flux glycerol concentration	
-	V = y(2);	% Culture volume	
+	C_0 = y(1);	% In-flux glycerol concentration
+	V = y(2);	% Culture volume
 	C = y(3);	% Effective carbon source
 	B = y(4);	% Biomass
-	
+
 	dydt = zeros(4,1);
 	% V - Volume
 	if (V > V_max)
@@ -234,9 +234,9 @@ function dydt = extended_model_ode_with_Hill_function(t,y)
 	else
 		rho_V = 0;
 	end
-	dydt(2) = v_i - rho_V;	
+	dydt(2) = v_i - rho_V;
     Stress = 1/(1 + exp(0.09*(115 - t)));
-	mu = 0.9*mu_max*(C/(C + 2*K_C))*(1 - Stress); % Fit		
+	mu = 0.9*mu_max*(C/(C + 2*K_C))*(1 - Stress); % Fit
 	%dydt(3) = C_0*v_i/V - C_eff*v_i/V - 0.8*(1 + 0.055*B^2)*C_max*(C_eff/(C_eff + K_C))*(B/V);
     %dydt(3) = (v_i/V)*(C_0 - C) - C_max*(C/(C + K_C))*(B/V)*0.8*(1 + 0.055*B^2);
     dydt(3) = (v_i/V)*(C_0 - C) - C_max*(C/(C + K_C))*(B/V)*alpha_H*(1/(1 + (K_H/B)^n_H));
@@ -249,11 +249,11 @@ function dydt = Herbert_chemostat_ode(t,y)
 	global mu_max C_max K_C V_max v_i v_o K_ratio;
 	% -------------------------------------------
 	% Variables
-	C_0 = y(1);	% In-flux glycerol concentration	
+	C_0 = y(1);	% In-flux glycerol concentration
 	V = y(2);	% Culture volume
 	C = y(3);	% Extracellular glycerol
 	B = y(4);	% Biomass
-	
+
 	dydt = zeros(4,1);
 	% V - Volume
 	if (V > V_max)
@@ -261,7 +261,7 @@ function dydt = Herbert_chemostat_ode(t,y)
 	else
 		rho_V = 0;
 	end
-	dydt(2) = v_i - rho_V;	
+	dydt(2) = v_i - rho_V;
 	mu = mu_max*C/(C + K_C);
 	% Glycerol
 	dydt(3) = C_0*v_i/V - C*v_i/V - C_max*(C/(C + K_ratio*K_C))*(B/V);
@@ -309,7 +309,7 @@ function extract_and_print(T, Y, index, filename)
 			if (t1 <= current_time && t2 >= current_time)
 				if (abs(t1 - current_time) < abs(t2 - current_time))
 					t_opt = t - 1;
-				else 
+				else
 					t_opt = t;
 				end
 			end
