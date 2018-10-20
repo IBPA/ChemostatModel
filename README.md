@@ -31,10 +31,10 @@ Files in the 'Data' folder
 If you have any questions about Chemostat Model, please contact Linh Huynh (huynh@ucdavis.edu).
 
 ### Citation
-
+Rai N, Huynh L, Kim M, Tagkopoulos I. Population collapse and adaptive rescue during long-term chemostat fermentation. Preprint, 2018.
 
 ### Licence
-
+See the [LICENSE](./LICENSE) file for license rights and limitations (Apache2.0).
 
 ### Acknowledgement
 
