@@ -189,20 +189,20 @@ function dydt = extended_model_ode(t,y)
 	dydt(3) = v_i - rho_V;
 	mu = mu_max;
 	switch Strain
-		case 1
+		case 1	% Wild type
 			Stress = 1/(1 + exp(0.09*(115 - t)));
 			mu = 0.9*mu_max*(C/(C + 2*K_C))*(1 - Stress); % Fit
 			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.8*C_max*(1 + 0.055*B^2);
-		case 2
+		case 2	% Mutant in in the experiment with 0.1% glycerol
 			mu = 0.32*mu_max*(C/(C + K_C));
 			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.45*C_max*(1 + 0.055*B^2);
-		case 3
+		case 3	% Mutant in in the experiment with 0.2% glycerol
 			mu = 0.35*mu_max*(C/(C + K_C));
 			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.45*C_max*(1 + 0.055*B^2);
-		case 4
+		case 4	% Mutant in in the experiment with 0.4% glycerol
 			mu = 0.315*mu_max*(C/(C + K_C));
 			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.55*C_max*(1 + 0.055*B^2);
-		case 5
+		case 5	% Mutant in in the experiment with 0.8% glycerol
 			mu = 0.31*mu_max*(C/(C + K_C));
 			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.5*C_max*(1 + 0.055*B^2);
 	end
