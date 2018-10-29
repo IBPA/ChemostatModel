@@ -42,7 +42,7 @@ function simulate_and_export()
 	extract_and_print(T2,Y2, 5, 'Data/Extended_glycerol_2.dat');
 	extract_and_print(T3,Y3, 5, 'Data/Extended_glycerol_4.dat');
 	extract_and_print(T4,Y4, 5, 'Data/Extended_glycerol_8.dat');
-	figure ('Name', 'Extended mode');
+	figure ('Name', 'Extended model');
 	p = plot(T1, Y1(:,5), '-g', T2, Y2(:,5), '-b', T3, Y3(:,5), '-r', T4, Y4(:,5), '-m');
     hold('on');
 	scatter(D1(:,1), D1(:,2), 30, 'g', 'filled');
