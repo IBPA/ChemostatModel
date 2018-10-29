@@ -1,8 +1,10 @@
 function Chemostat_Model
     plot_diff_ratio;
-    plot_best_Hill_model
+    plot_best_Hill_model;
     simulate_and_export;
-    %search_parameter_Hill_function_model
+    %%search_parameter_Hill_function_model      % fit with 0.2% and 0.4%
+    %%fitting_extended_model;                    % fit with 0.2% and 0.4%
+    %%fitting_Herbert_model;                     % fit with 0.2% and 0.4%
 end
 
 function simulate_and_export()
@@ -20,7 +22,7 @@ function simulate_and_export()
 	extract_and_print(T2, Y2, 4, 'Data/Herbert_glycerol_2.dat');
 	extract_and_print(T3, Y3, 4, 'Data/Herbert_glycerol_4.dat');
 	extract_and_print(T4, Y4, 4, 'Data/Herbert_glycerol_8.dat');
-	figure;
+	figure ('Name', 'Herbert model');    
 	p = plot(T1, Y1(:,4), '-g', T2, Y2(:,4), '-b', T3, Y3(:,4), '-r', T4, Y4(:,4), '-m');
 	hold('on');
 	scatter(D1(:,1), D1(:,2), 30, 'g', 'filled');
@@ -31,6 +33,7 @@ function simulate_and_export()
 	hold('on');
 	scatter(D2(:,1), D2(:,2), 30, 'r', 'filled');
 	% Extended model
+   	assign_extended_model_parameter;
 	[T1 Y1] = simulate_extended_model(0.1, 0.15, 2, 150);
 	[T2 Y2] = simulate_extended_model(0.2, 0.15, 3, 155);
 	[T3 Y3] = simulate_extended_model(0.4, 0.35, 4, 160);
@@ -39,7 +42,7 @@ function simulate_and_export()
 	extract_and_print(T2,Y2, 5, 'Data/Extended_glycerol_2.dat');
 	extract_and_print(T3,Y3, 5, 'Data/Extended_glycerol_4.dat');
 	extract_and_print(T4,Y4, 5, 'Data/Extended_glycerol_8.dat');
-	figure;
+	figure ('Name', 'Extended mode');
 	p = plot(T1, Y1(:,5), '-g', T2, Y2(:,5), '-b', T3, Y3(:,5), '-r', T4, Y4(:,5), '-m');
     hold('on');
 	scatter(D1(:,1), D1(:,2), 30, 'g', 'filled');
@@ -51,19 +54,86 @@ function simulate_and_export()
 	scatter(D2(:,1), D2(:,2), 30, 'r', 'filled');
 end
 
+function fitting_extended_model
+	global mu_max C_max K_C V_max v_i v_o K_B n_B;
+	assign_extended_model_parameter;
+            
+    K_B_list = 0.04:0.001:0.06;
+    n_B_list = 1.5:0.1:4;
+    min_error = 1e10;
+    opt_n_B = 0;
+    opt_K_B = 0;
+    opt_B_1 = 0;
+    opt_B_2 = 0;
+    for i = 1:length(K_B_list)
+        disp(i);
+        for j = 1:length(n_B_list)
+            K_B = K_B_list(i);
+            n_B = n_B_list(j);
+            [T2, Y2] = simulate_extended_model_first_period(0.2, 0.15, 50);
+            [T3, Y3] = simulate_extended_model_first_period(0.4, 0.35, 50);            
+            error = (Y2(length(Y2),5) - 3.358)^2 + (Y3(length(Y3), 5) - 4.452)^2;
+            if (error < min_error)
+                min_error = error;
+                opt_K_B = K_B;
+                opt_n_B = n_B;
+                opt_B_1 = Y2(length(Y2),5);
+                opt_B_2 = Y3(length(Y3), 5);
+                disp([opt_K_B, opt_n_B, opt_B_1, opt_B_2]);
+            end
+        end
+    end
+    disp([opt_K_B, opt_n_B, opt_B_1, opt_B_2]);
+end
+
+function fitting_Herbert_model
+    % Herber model
+	global mu_max C_max K_C V_max v_i v_o;
+	assign_Herbert_model_parameter;
+	period = 50;
+    
+    mu_max_list = 0.1:0.02:0.3;
+    C_max_list = 0.01:0.002:0.02;
+    min_error = 1e10;
+    opt_mu_max = 0; 
+    opt_C_max = 0;
+    opt_B_1 = 0;
+    opt_B_2 = 0;
+    for i = 1:length(mu_max_list)
+        disp(i);
+        for j = 1:length(C_max_list)
+            mu_max = mu_max_list(i);
+            C_max = C_max_list(j);
+            [T2 Y2] = ode45(@Herbert_chemostat_ode,[0, period], [0.2, V_max, 0.2, 0.15]);
+            [T3 Y3] = ode45(@Herbert_chemostat_ode,[0, period], [0.4, V_max, 0.4, 0.35]);
+            error = (Y2(length(Y2),4) - 3.358)^2 + (Y3(length(Y3), 4) - 4.452)^2;
+            if (error < min_error)
+                min_error = error;
+                opt_mu_max = mu_max;
+                opt_C_max = C_max;
+                opt_B_1 = Y2(length(Y2),4);
+                opt_B_2 = Y3(length(Y3), 4);
+                disp([opt_mu_max, opt_C_max, opt_B_1, opt_B_2]);
+            end
+        end
+    end
+    disp([opt_mu_max, opt_C_max, opt_B_1, opt_B_2]);
+end
+
 function plot_best_Hill_model
     global alpha_H K_H n_H;
-    alpha_H = 20;
-    K_H = 20;
+    % best parameter values fitting with 0.2% and 0.4%
+    alpha_H = 22;
+    K_H = 24;
     n_H = 1.5;
     plot_Hill_function_trial(true);
 end
 
 function search_parameter_Hill_function_model
     global alpha_H K_H n_H;
-    alpha_H_list = [15,16,17,18,19,20,21,22,23,24,25];
-    K_H_list = [15,16,17,18,19,20,21,22,23,24,25];
-    n_H_list = [1.5,2];
+    alpha_H_list = 15:1:25;
+    K_H_list = 15:1:25;
+    n_H_list = 1.5:0.25:2;
     disp([2.1, 3.15, 4.4, 5.5]);
     alpha_H_best = -1;
     K_H_best = -1;
@@ -77,7 +147,7 @@ function search_parameter_Hill_function_model
                  K_H = K_H_list(j);
                  n_H = n_H_list(k);
                  OD = plot_Hill_function_trial(false);
-                 diff = abs(OD(1) - 2.1) + abs(OD(2) - 3.15) + abs(OD(3) - 4.4) + abs(OD(4) - 5.5);
+                 diff = (OD(2) - 3.358)^2 + (OD(3) - 4.452)^2;
                  if (diff < min_diff)
                      alpha_H_best = alpha_H;
                      K_H_best = K_H;
@@ -99,14 +169,14 @@ function OD = plot_Hill_function_trial(is_plotted)
     global mu_max C_max K_C V_max v_i v_o;
 	assign_extended_model_parameter;
     wt_phase_time = 80;
-	[T1 Y1] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.1, V_max, 0.1, 0.15]);
-    [T2 Y2] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.2, V_max, 0.2, 0.15]);
-    [T3 Y3] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.4, V_max, 0.4, 0.35]);
-    [T4 Y4] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.8, V_max, 0.8, 0.15]);
+	[T1, Y1] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.1, V_max, 0.1, 0.15]);
+    [T2, Y2] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.2, V_max, 0.2, 0.15]);
+    [T3, Y3] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.4, V_max, 0.4, 0.35]);
+    [T4, Y4] = ode45(@extended_model_ode_with_Hill_function,[0, wt_phase_time], [0.8, V_max, 0.8, 0.15]);
     OD = [Y1(length(Y1),4), Y2(length(Y2),4), Y3(length(Y3),4), Y4(length(Y4),4)];
     %disp(OD);
     if (is_plotted)
-        figure;
+        figure ('Name', 'Hill function');
         p = plot(T1, Y1(:,4), '-g', T2, Y2(:,4), '-b', T3, Y3(:,4), '-r', T4, Y4(:,4), '-m');
         [D1 D2 D3] = get_exp_data();
         hold('on');
@@ -139,7 +209,7 @@ function plot_diff_ratio
 	extract_and_print(T1,Y1, 4, 'Data/Herbert_K_C_1.dat');
 	extract_and_print(T2,Y2, 4, 'Data/Herbert_K_C_2.dat');
 	extract_and_print(T3,Y3, 4, 'Data/Herbert_K_C_0_5.dat');
-	figure;
+	figure ('Name', 'Different ration K_C/K_M');
 	%p = plot(T1, log(Y1(:,4)), '-g', T2, log(Y2(:,4)), '-b', T3, log(Y3(:,4)), '-r');
 	%hold on;
 	p = plot(T1, Y1(:,4), '-g', T2, Y2(:,4), '-b', T3, Y3(:,4), '-r');
@@ -149,20 +219,24 @@ function plot_diff_ratio
 	%plot2svg('Diff_K_ratio.svg');
 end
 
+function [T, Y] = simulate_extended_model_first_period(init_conc, init_OD, time_length)
+	global V_max;
+	% WT: strain = 1
+	[T, Y] = ode45(@extended_model_ode,[0, time_length], [1, init_conc, V_max, init_conc, init_OD]);
+end
+
 function [T, Y] = simulate_extended_model(init_conc, init_OD, mutated_strain, wt_phase_time)
 	global mu_max C_max K_C V_max v_i v_o;
-	assign_extended_model_parameter;
 	% WT: strain = 1
-	%wt_phase_time = 100;
 	[T1 Y1] = ode45(@extended_model_ode,[0, wt_phase_time], [1, init_conc, V_max, init_conc, init_OD]);
-	% Mutant: strain = 2
+	% Mutant: strain = 2,3,4,5
 	[T2 Y2] = ode45(@extended_model_ode,[0, 300 - wt_phase_time], [mutated_strain, Y1(size(Y1,1),2), Y1(size(Y1,1),3), Y1(size(Y1,1),4), Y1(size(Y1,1),5)]);
 	T = cat(1,T1,T2 + wt_phase_time);
 	Y = cat(1,Y1,Y2);
 end
 
 function dydt = extended_model_ode(t,y)
-	global V_max v_i v_o mu_max C_max K_C;
+	global V_max v_i v_o mu_max C_max K_C K_B n_B;
 	% Parameters
 	% V_max
 	% v_o
@@ -185,26 +259,32 @@ function dydt = extended_model_ode(t,y)
 		rho_V = v_o;
 	else
 		rho_V = 0;
-	end
+    end
+    if (B < 0)
+        B = 1e-5;
+    end
+    if (C < 0)
+        C = 1e-5;
+    end
 	dydt(3) = v_i - rho_V;
 	mu = mu_max;
 	switch Strain
 		case 1	% Wild type
 			Stress = 1/(1 + exp(0.09*(115 - t)));
 			mu = 0.9*mu_max*(C/(C + 2*K_C))*(1 - Stress); % Fit
-			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.8*C_max*(1 + 0.055*B^2);
+			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.8*C_max*(1 + K_B*B^n_B);
 		case 2	% Mutant in in the experiment with 0.1% glycerol
-			mu = 0.32*mu_max*(C/(C + K_C));
-			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.45*C_max*(1 + 0.055*B^2);
+			mu = 0.32*mu_max*(C/(C + K_C));			
+            dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.45*C_max*(1 + K_B*B^n_B);
 		case 3	% Mutant in in the experiment with 0.2% glycerol
 			mu = 0.35*mu_max*(C/(C + K_C));
-			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.45*C_max*(1 + 0.055*B^2);
+			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.45*C_max*(1 + K_B*B^n_B);
 		case 4	% Mutant in in the experiment with 0.4% glycerol
 			mu = 0.315*mu_max*(C/(C + K_C));
-			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.55*C_max*(1 + 0.055*B^2);
+			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.55*C_max*(1 + K_B*B^n_B);
 		case 5	% Mutant in in the experiment with 0.8% glycerol
 			mu = 0.31*mu_max*(C/(C + K_C));
-			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.5*C_max*(1 + 0.055*B^2);
+			dydt(4) = (v_i/V)*(C_0 - C) - (C/(C + K_C))*(B/V)*0.5*C_max*(1 + K_B*B^n_B);
 	end
 	% Biomass
 	dydt(5)  = mu*B - rho_V*(B/V);
@@ -236,9 +316,7 @@ function dydt = extended_model_ode_with_Hill_function(t,y)
 	end
 	dydt(2) = v_i - rho_V;
     Stress = 1/(1 + exp(0.09*(115 - t)));
-	mu = 0.9*mu_max*(C/(C + 2*K_C))*(1 - Stress); % Fit
-	%dydt(3) = C_0*v_i/V - C_eff*v_i/V - 0.8*(1 + 0.055*B^2)*C_max*(C_eff/(C_eff + K_C))*(B/V);
-    %dydt(3) = (v_i/V)*(C_0 - C) - C_max*(C/(C + K_C))*(B/V)*0.8*(1 + 0.055*B^2);
+	mu = 0.9*mu_max*(C/(C + 2*K_C))*(1 - Stress); % Fit	
     dydt(3) = (v_i/V)*(C_0 - C) - C_max*(C/(C + K_C))*(B/V)*alpha_H*(1/(1 + (K_H/B)^n_H));
 	% Biomass
 	dydt(4)  = mu*B - rho_V*(B/V);
@@ -270,7 +348,7 @@ function dydt = Herbert_chemostat_ode(t,y)
 end
 
 function assign_extended_model_parameter
-	global mu_max C_max K_C V_max v_i v_o;
+	global mu_max C_max K_C V_max v_i v_o K_B n_B;
 	mu_max = 0.41;
 	%C_max = 0.0096; original
 	C_max = 1.3*0.0096;
@@ -278,6 +356,8 @@ function assign_extended_model_parameter
 	V_max = 1;
 	v_i = 0.00167*60;
 	v_o = 0.0025*60;
+    K_B = 0.04;    % Fitted with 0.2% and 0.4% glycerol
+    n_B = 2.2;        % Fitted with 0.2% and 0.4% glycerol
 end
 
 function assign_Herbert_model_parameter
@@ -285,9 +365,11 @@ function assign_Herbert_model_parameter
 	% Palsson Nat Comm 0.23 - 0.45 h-1
 	% Palsson Nature 2002 0.2 - 0.5 h-1
 	% Herbert 1956: mu_max = 0.85 h-1, K_C = 12.3 ug/ml = 0.0123 g/l
-	mu_max = 0.2;
+	%mu_max = 0.2; % Fitted with 0.2% and 0.4% glycerol
+    mu_max = 0.22;
 	% Palsson Nat Comm 0.075 g l-1 hr-1 OD -1 = 0.006%, 0.12 = 0.0096
-	C_max = 0.018;
+	%C_max = 0.018;
+    C_max = 0.018; % Fitted with 0.2% and 0.4% glycerol
 	% K_C = 12.3 ug/ml = 0.0123 g/l = 0.000975%
 	K_C = 0.001;
 	% Chemostat parameters
